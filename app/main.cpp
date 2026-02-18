@@ -11,6 +11,15 @@ int main() {
 
     std::shared_ptr<Value> powTest = Value::pow(x2, b);
 
+    std::shared_ptr<Value> logTest = Value::log(x2);
+    std::shared_ptr<Value> expTest = Value::exp(x2);
+    std::shared_ptr<Value> reluTest = Value::relu(x2);
+    std::shared_ptr<Value> negTest = Value::neg(x2);
+
     yb->print();
     powTest->print();
+    logTest->print();
+    expTest->print();
+    reluTest->print();
+    negTest->print();
 }

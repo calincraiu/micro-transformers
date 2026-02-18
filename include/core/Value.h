@@ -27,6 +27,11 @@ public:
 	static std::shared_ptr<Value> multiply(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b);
 	static std::shared_ptr<Value> pow(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b);
 
+	static std::shared_ptr<Value> neg(const std::shared_ptr<Value>& a);
+	static std::shared_ptr<Value> log(const std::shared_ptr<Value>& a);
+	static std::shared_ptr<Value> exp(const std::shared_ptr<Value>& a);
+	static std::shared_ptr<Value> relu(const std::shared_ptr<Value>& a);
+
 private:
 	// Data/parameter stored in this node
 	float m_data;

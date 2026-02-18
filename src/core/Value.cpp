@@ -75,3 +75,58 @@ std::shared_ptr<Value> Value::pow(const std::shared_ptr<Value>& a, const std::sh
     };
     return out;
 }
+
+std::shared_ptr<Value> Value::neg(const std::shared_ptr<Value>& a)
+{
+    std::shared_ptr<Value> out = std::make_shared<Value>(
+        a->m_data * -1.0f,
+        std::vector<std::shared_ptr<Value>>{ a }
+    );
+
+    out->m_local_grads = std::vector<float>{
+        - 1.0f // w.r.t a
+    };
+    return out;
+}
+
+std::shared_ptr<Value> Value::log(const std::shared_ptr<Value>& a)
+{
+    std::shared_ptr<Value> out = std::make_shared<Value>(
+        std::log(a->m_data),
+        std::vector<std::shared_ptr<Value>>{ a }
+    );
+
+    out->m_local_grads = std::vector<float>{
+        1.0f / a->m_data // w.r.t a
+    };
+    return out;
+}
+
+std::shared_ptr<Value> Value::exp(const std::shared_ptr<Value>& a)
+{
+    std::shared_ptr<Value> out = std::make_shared<Value>(
+        std::exp(a->m_data),
+        std::vector<std::shared_ptr<Value>>{ a }
+    );
+
+    out->m_local_grads = std::vector<float>{
+        std::exp(a->m_data) // w.r.t a
+    };
+    return out;
+}
+
+std::shared_ptr<Value> Value::relu(const std::shared_ptr<Value>& a)
+{
+    float out_data = a->m_data <= 0.0f ? 0.0f : a->m_data;
+    std::shared_ptr<Value> out = std::make_shared<Value>(
+        out_data,
+        std::vector<std::shared_ptr<Value>>{ a }
+    );
+
+    float out_derivative = a->m_data <= 0.0f ? 0.0f : 1.0f;
+    out->m_local_grads = std::vector<float>{
+        out_derivative, // w.r.t a
+    };
+    return out;
+}
+
