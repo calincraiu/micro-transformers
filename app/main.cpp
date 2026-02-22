@@ -1,25 +1,34 @@
+#include <iostream>
 #include "core/Value.h"
+#include "core/Tape.h"
+#include "core/Node.h"
+
 
 int main() {
+    Tape tape;
 
-    std::shared_ptr<Value> x1 = Value::create(1.5f);
-    std::shared_ptr<Value> x2 = Value::create(2.0f);
-    std::shared_ptr<Value> b = Value::create(5.0f);
+    // Create leaf nodes via Tape
+    Value x(tape.create_leaf(2.0f), &tape);
+    Value y(tape.create_leaf(4.0f), &tape);
+    Value z(tape.create_leaf(3.0f), &tape);
 
-    std::shared_ptr<Value> y = Value::multiply(x1, x2);
-    std::shared_ptr<Value> yb = Value::add(y, b);
+    // Build computation using Value operators
+    Value f = (x.pow(2.0f) + y) * z;
+    Value result = f.relu();
 
-    std::shared_ptr<Value> powTest = Value::pow(x2, b);
+    // Loss
+    Value expected(tape.create_leaf(20.0f), &tape); // Mock expected result
+    Value error = expected - result; 
+    Value loss = error * error; // mean squared error
 
-    std::shared_ptr<Value> logTest = Value::log(x2);
-    std::shared_ptr<Value> expTest = Value::exp(x2);
-    std::shared_ptr<Value> reluTest = Value::relu(x2);
-    std::shared_ptr<Value> negTest = Value::neg(x2);
+    // Backprop
+    tape.zero_grad();
+    tape.backward(loss.get_node());
 
-    yb->print();
-    powTest->print();
-    logTest->print();
-    expTest->print();
-    reluTest->print();
-    negTest->print();
+    // Output results
+    std::cout << "loss = " << loss.get_data() << "\n";
+    std::cout << "dloss/dx = " << x.get_grad() << "\n";
+    std::cout << "dloss/dy = " << y.get_grad() << "\n";
+
+    return 0;
 }

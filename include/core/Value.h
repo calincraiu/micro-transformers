@@ -1,46 +1,38 @@
 #ifndef VALUE_H
 #define VALUE_H
 
-#include <vector>
 #include <memory>
-#include <optional>
+#include "core/Node.h"
+#include "core/Tape.h"
 
-class Value : public std::enable_shared_from_this<Value> {
+
+class Value {
 public:
 	// Constructors
-	explicit Value(float data);
-	Value(float data, std::vector<std::shared_ptr<Value>> children);
+	Value(Node* n, Tape* t);
 
 	// Methods
-	void print();
-	int num_children();
+	float get_data() const;
+	float get_grad() const;
+	Node* get_node() const;
 
-	// Static Methods
-
-	/// <summary>
-	/// Create a shared_ptr of a Value.
-	/// </summary>
-	/// <param name="data">the Value data.</param>
-	/// <returns>shared_ptr of the Value.</returns>
-	static std::shared_ptr<Value> create(float data);
-	static std::shared_ptr<Value> add(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b);
-	static std::shared_ptr<Value> multiply(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b);
-	static std::shared_ptr<Value> pow(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b);
-
-	static std::shared_ptr<Value> neg(const std::shared_ptr<Value>& a);
-	static std::shared_ptr<Value> log(const std::shared_ptr<Value>& a);
-	static std::shared_ptr<Value> exp(const std::shared_ptr<Value>& a);
-	static std::shared_ptr<Value> relu(const std::shared_ptr<Value>& a);
+	// Operators
+	Value operator-() const;
+	Value operator+(const Value& a) const;
+	Value operator-(const Value& a) const;
+	Value operator*(const Value& a) const;
+	Value operator/(const Value& a) const;
+	
+	// Operations
+	Value pow(const Value& a) const;
+	Value pow(const float a) const;
+	Value log() const;
+	Value exp() const;
+	Value relu() const;
 
 private:
-	// Data/parameter stored in this node
-	float m_data;
-	// Derivative of the loss w.r.t. this node
-	float m_grad = 0;
-	// Children of this node in the computation graph
-	std::optional<std::vector<std::shared_ptr<Value>>> m_children;
-	// Local derivative of this node w.r.t. its children in the computation graph
-	std::optional<std::vector<float>> m_local_grads;
+	Node* m_node;
+	Tape* m_tape;
 };
 
-#endif VALUE_H
+#endif // VALUE_H

@@ -1,132 +1,102 @@
 #include <string>
 #include <cmath>
+#include <limits>
 
 #include "core/Value.h"
 
 
-Value::Value(float data) :
-	m_data(data), m_children(std::nullopt), m_local_grads(std::nullopt)
+Value::Value(Node* n, Tape* t) : m_node(n), m_tape(t)
 {
 }
 
-Value::Value(float data, std::vector<std::shared_ptr<Value>> children) :
-	m_data(data), m_children(std::move(children)), m_local_grads(std::nullopt)
-{
+float Value::get_data() const {
+    return m_node->get_data();
 }
 
-void Value::print()
+float Value::get_grad() const {
+    return m_node->get_grad();
+}
+
+Node* Value::get_node() const { 
+    return m_node; 
+}
+
+Value Value::operator-() const
 {
-    std::printf(
-        "Value(Data: %s ; Grad: %s ; Children: %i)\n", 
-        std::to_string(m_data).c_str(), 
-        std::to_string(m_grad).c_str(),
-        num_children()
+    return Value(
+        m_tape->create_node(Op::Neg, m_node, nullptr),
+        m_tape
     );
 }
 
-int Value::num_children()
+Value Value::operator+(const Value& a) const
 {
-    return m_children.has_value() ? m_children.value().size() : 0;
-}
-
-std::shared_ptr<Value> Value::create(float data)
-{
-    return std::make_shared<Value>(data);
-}
-
-std::shared_ptr<Value> Value::add(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b)
-{
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        a->m_data + b->m_data,
-        std::vector<std::shared_ptr<Value>>{ a, b }
+    return Value(
+        m_tape->create_node(Op::Add, m_node, a.m_node),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{ 
-        1.0f, // w.r.t a
-        1.0f, // w.r.t b
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::multiply(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b)
+Value Value::operator-(const Value& a) const
 {
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        a->m_data * b->m_data,
-        std::vector<std::shared_ptr<Value>>{ a, b }
+    return Value(
+        m_tape->create_node(Op::Sub, m_node, a.m_node),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{ 
-        b->m_data, // w.r.t a
-        a->m_data, // w.r.t b
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::pow(const std::shared_ptr<Value>& a, const std::shared_ptr<Value>& b)
+Value Value::operator*(const Value& a) const
 {
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        std::pow(a->m_data, b->m_data),
-        std::vector<std::shared_ptr<Value>>{ a, b }
+    return Value(
+        m_tape->create_node(Op::Mul, m_node, a.m_node),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{ 
-        b->m_data * std::pow(a->m_data, b->m_data - 1.0f), // w.r.t a
-        a->m_data * std::pow(b->m_data, a->m_data - 1.0f), // w.r.t b
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::neg(const std::shared_ptr<Value>& a)
+Value Value::operator/(const Value& a) const
 {
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        a->m_data * -1.0f,
-        std::vector<std::shared_ptr<Value>>{ a }
+    return Value(
+        m_tape->create_node(Op::Div, m_node, a.m_node),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{
-        - 1.0f // w.r.t a
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::log(const std::shared_ptr<Value>& a)
+Value Value::pow(const Value& a) const
 {
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        std::log(a->m_data),
-        std::vector<std::shared_ptr<Value>>{ a }
+    return Value(
+        m_tape->create_node(Op::Pow, m_node, a.m_node),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{
-        1.0f / a->m_data // w.r.t a
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::exp(const std::shared_ptr<Value>& a)
+Value Value::pow(const float a) const
 {
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        std::exp(a->m_data),
-        std::vector<std::shared_ptr<Value>>{ a }
+    return Value(
+        m_tape->create_node(Op::PowConst, m_node, nullptr, a),
+        m_tape
     );
-
-    out->m_local_grads = std::vector<float>{
-        std::exp(a->m_data) // w.r.t a
-    };
-    return out;
 }
 
-std::shared_ptr<Value> Value::relu(const std::shared_ptr<Value>& a)
+Value Value::log() const
 {
-    float out_data = a->m_data <= 0.0f ? 0.0f : a->m_data;
-    std::shared_ptr<Value> out = std::make_shared<Value>(
-        out_data,
-        std::vector<std::shared_ptr<Value>>{ a }
+    return Value(
+        m_tape->create_node(Op::Log, m_node, nullptr),
+        m_tape
     );
-
-    float out_derivative = a->m_data <= 0.0f ? 0.0f : 1.0f;
-    out->m_local_grads = std::vector<float>{
-        out_derivative, // w.r.t a
-    };
-    return out;
 }
 
+Value Value::exp() const
+{
+    return Value(
+        m_tape->create_node(Op::Exp, m_node, nullptr),
+        m_tape
+    );
+}
+
+Value Value::relu() const
+{
+    return Value(
+        m_tape->create_node(Op::Relu, m_node, nullptr),
+        m_tape
+    );
+}
