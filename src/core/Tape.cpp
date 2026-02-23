@@ -104,18 +104,17 @@ void Tape::_set_op_result(Node* node) {
     node->set_data(result);
 }
 
-void Tape::backward(Node* output) {
-    if (!output) return;
+void Tape::backward(Node* node) {
+    if (!node) return;
 
-    // Set the root gradient (usually the loss)
-    output->set_grad(1.0f);
+    // Set the root gradient
+    node->set_grad(1.0f);
 
     // Process nodes in reverse order (reverse topological = correct for backprop)
     for (auto it = m_nodes.rbegin(); it != m_nodes.rend(); ++it) {
         Node* n = it->get();
 
-        float grad = n->get_grad();  // incoming gradient to this node
-
+        float grad = n->get_grad();
         // Early exit if this node has no gradient to propagate
         if (grad == 0.0f) continue;
 
@@ -128,7 +127,6 @@ void Tape::backward(Node* output) {
         switch (n->get_op()) {
 
         case Op::Leaf:
-            // Leaf nodes usually don't propagate further
             break;
 
         case Op::Neg:
@@ -161,28 +159,25 @@ void Tape::backward(Node* output) {
             }
             break;
 
-        case Op::Pow:  // a ^ b
+        case Op::Pow: // a ^ b
         {
             if (left) {
-                // ∂/∂a = b * a^(b-1)
                 float deriv_a = (l_data != 0.0f || r_data == 0.0f)
                     ? r_data * std::pow(l_data, r_data - 1.0f)
                     : 0.0f;  // avoid 0^negative
                 left->set_grad(left->get_grad() + deriv_a * grad);
             }
             if (right && l_data > 0.0f) {
-                // ∂/∂b = a^b * log(a)
                 float deriv_b = std::pow(l_data, r_data) * std::log(l_data);
                 right->set_grad(right->get_grad() + deriv_b * grad);
             }
             break;
         }
 
-        case Op::PowConst:  // a ^ c    where c is constant
+        case Op::PowConst: // a ^ c where c is constant
         {
             if (left) {
                 float c = n->get_const();
-                // ∂/∂a = c * a^(c-1) = c * (a^c / a)
                 float deriv = (l_data != 0.0f)
                     ? c * (n->get_data() / l_data)
                     : 0.0f;
@@ -219,11 +214,9 @@ void Tape::backward(Node* output) {
 }
 
 void Tape::zero_grad() {
-    for (size_t i = 0; i < m_nodes.size(); i++)
-    {
-        m_nodes.at(i)->set_grad(0.0f);
+    for (auto& node_ptr : m_nodes) {
+        node_ptr->set_grad(0.0f);
     }
-    m_nodes.at(m_nodes.size() - 1)->set_grad(1.0f); // Loss grad
 }
 
 void Tape::clear() {

@@ -11,7 +11,7 @@ public:
 	Node* create_node(Op op, Node* left, Node* right);
 	Node* create_node(Op op, Node* left, Node* right, float c);
 
-	void backward(Node* output);
+	void backward(Node* node);
 	void zero_grad();
 	void clear();
 
