@@ -17,13 +17,16 @@ target_include_directories(core PUBLIC
 )
 
 # nn
-set(NN_HEADERS 
-    "${CMAKE_SOURCE_DIR}/include/nn/Linear.h"
-    "${CMAKE_SOURCE_DIR}/include/nn/MLP.h"
+set(NN_HEADERS
+    "${CMAKE_SOURCE_DIR}/include/nn/layers/Layer.h"
+    "${CMAKE_SOURCE_DIR}/include/nn/layers/Linear.h"
+    "${CMAKE_SOURCE_DIR}/include/nn/models/MLP.h"
+    "${CMAKE_SOURCE_DIR}/include/nn/optimizers/SGD.h"
 )
 set(NN_SOURCES
-    nn/Linear.cpp
-    nn/MLP.cpp
+    nn/layers/Linear.cpp
+    nn/models/MLP.cpp
+    nn/optimizers/SGD.cpp
 )
 add_library(nn
     ${NN_SOURCES} 

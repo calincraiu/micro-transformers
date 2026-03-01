@@ -1,34 +1,106 @@
 #include <iostream>
+
 #include "core/Value.h"
 #include "core/Tape.h"
 #include "core/Node.h"
 
+#include "nn/layers/Linear.h"
+#include "nn/models/MLP.h"
 
-int main() {
+void test_values() {
+    std::cout << "--- Value Test ---" << std::endl;
+
     Tape tape;
+    Tape* tapeP = &tape;
 
     // Create leaf nodes via Tape
-    Value x(tape.create_leaf(2.0f), &tape);
-    Value y(tape.create_leaf(4.0f), &tape);
-    Value z(tape.create_leaf(3.0f), &tape);
+    Value x(tapeP->create_leaf(2.0f), tapeP);
+    Value y(tapeP->create_leaf(4.0f), tapeP);
+    Value z(tapeP->create_leaf(3.0f), tapeP);
 
     // Build computation using Value operators
     Value f = (x.pow(2.0f) + y) * z;
     Value result = f.relu();
 
     // Loss
-    Value expected(tape.create_leaf(20.0f), &tape); // Mock expected result
-    Value error = expected - result; 
+    Value expected(tapeP->create_leaf(30.0f), tapeP); // Mock expected result
+    Value error = expected - result;
     Value loss = error * error; // mean squared error
 
     // Backprop
-    tape.zero_grad();
-    tape.backward(loss.get_node());
+    tapeP->zero_grad();
+    tapeP->backward(loss.get_node());
 
     // Output results
     std::cout << "loss = " << loss.get_data() << "\n";
     std::cout << "dloss/dx = " << x.get_grad() << "\n";
     std::cout << "dloss/dy = " << y.get_grad() << "\n";
+}
 
+void test_linear() {
+    std::cout << "--- Linear Layer Test ---" << std::endl;
+
+    Tape tape;
+
+    Linear l = Linear(&tape, 3, 4, true);
+
+    // Input
+    Value i1 = Value(tape.create_leaf(1.0f), &tape);
+    Value i2 = Value(tape.create_leaf(2.0f), &tape);
+    Value i3 = Value(tape.create_leaf(3.0f), &tape);
+    std::vector<Value> input = { i1, i2, i3 };
+        
+    // Forward
+    std::vector<Value> output = l(input);
+
+    // Log
+    std::cout << "Output: ";
+    for (Value o : output) {
+        std::cout << o.get_data() << " ";
+    }
+    std::cout << std::endl;
+}
+
+void test_MLP() {
+    std::cout << "--- MLP Test ---" << std::endl;
+
+    Tape tape;
+
+    std::vector<size_t> sizes = { 2, 16, 16, 1 };
+    MLP model(&tape, sizes);
+
+    // Input
+    Value x1(tape.create_leaf(1.0f), &tape);
+    Value x2(tape.create_leaf(2.0f), &tape);
+    std::vector<Value> input = { x1, x2 };
+
+    // Forward
+    std::vector<Value> output = model(input);
+
+    // Loss (L2)
+    Value target(tape.create_leaf(3.5f), &tape);
+    Value diff = output[0] - target;
+    Value loss = diff * diff;
+
+    // Backprop
+    tape.zero_grad();
+    tape.backward(loss.get_node());
+
+    // Log
+    std::cout << "Output: ";
+    for (Value o : output) {
+        std::cout << o.get_data() << " ";
+    }
+    std::cout << std::endl;
+    std::cout << "loss = " << loss.get_data() << std::endl;
+    std::cout << "dloss/dx1 = " << x1.get_grad() << std::endl;
+    std::cout << "dloss/dx2 = " << x2.get_grad() << std::endl;
+}
+
+int main() {
+    test_values();
+    test_linear();
+    test_MLP();
     return 0;
 }
+
