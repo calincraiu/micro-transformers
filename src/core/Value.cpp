@@ -21,6 +21,10 @@ Node* Value::get_node() const {
     return m_node; 
 }
 
+void Value::set_data(float data) {
+    m_node->set_data(data);
+}
+
 Value Value::operator-() const
 {
     return Value(
@@ -96,7 +100,15 @@ Value Value::exp() const
 Value Value::relu() const
 {
     return Value(
-        m_tape->create_node(Op::Relu, m_node, nullptr),
+        m_tape->create_node(Op::ReLU, m_node, nullptr),
+        m_tape
+    );
+}
+
+Value Value::tanh() const
+{
+    return Value(
+        m_tape->create_node(Op::Tanh, m_node, nullptr),
         m_tape
     );
 }

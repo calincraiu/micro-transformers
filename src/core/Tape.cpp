@@ -93,8 +93,12 @@ void Tape::_set_op_result(Node* node) {
         result = std::exp(l_data);
         break;
 
-    case Op::Relu:
+    case Op::ReLU:
         result = l_data > 0 ? l_data : 0;
+        break;
+
+    case Op::Tanh:
+        result = std::tanh(l_data);
         break;
 
     default:
@@ -194,20 +198,27 @@ void Tape::backward(Node* node) {
 
         case Op::Exp:
             if (left) {
-                // ∂/∂a exp(a) = exp(a)
                 left->set_grad(left->get_grad() + n->get_data() * grad);
             }
             break;
 
-        case Op::Relu:
+        case Op::ReLU:
             if (left) {
                 float mask = (l_data > 0.0f) ? 1.0f : 0.0f;
                 left->set_grad(left->get_grad() + mask * grad);
             }
             break;
 
+        case Op::Tanh:
+            if (left) {
+                float t = n->get_data(); // tanh(left)
+                float deriv = 1.0f - t * t; // d/dx tanh(x) = 1 - tanh^2(x)
+                left->set_grad(left->get_grad() + deriv * grad);
+            }
+            break;
+
         default:
-            // unknown op — do nothing
+            // unknown op
             break;
         }
     }

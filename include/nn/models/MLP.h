@@ -17,6 +17,7 @@ public:
 
 	std::vector<Layer*> layers() const;
 	std::vector<Value> parameters() const;
+	std::string description() const;
 
 private:
 	Tape* m_tape = nullptr;

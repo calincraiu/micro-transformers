@@ -14,7 +14,8 @@ enum class Op
 	PowConst,
 	Log,
 	Exp,
-	Relu,
+	ReLU,
+	Tanh,
 };
 
 class Node {

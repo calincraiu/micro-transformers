@@ -6,6 +6,7 @@
 
 #include "nn/layers/Linear.h"
 #include "nn/models/MLP.h"
+#include "nn/optimizers/SGD.h"
 
 void test_values() {
     std::cout << "--- Value Test ---" << std::endl;
@@ -69,6 +70,9 @@ void test_MLP() {
     std::vector<size_t> sizes = { 2, 16, 16, 1 };
     MLP model(&tape, sizes);
 
+    std::cout << "Model: " << std::endl;
+    std::cout << model.description() << std::endl;
+
     // Input
     Value x1(tape.create_leaf(1.0f), &tape);
     Value x2(tape.create_leaf(2.0f), &tape);
@@ -97,10 +101,60 @@ void test_MLP() {
     std::cout << "dloss/dx2 = " << x2.get_grad() << std::endl;
 }
 
+void test_SGD() {
+    std::cout << "--- SGD Test ---" << std::endl;
+
+    Tape tape;
+
+    std::vector<size_t> sizes = { 2, 16, 16, 1 };
+    MLP model(&tape, sizes);
+    SGD optimizer = SGD(model.parameters(), 0.0005f);
+
+    std::cout << "Model: " << std::endl;
+    std::cout << model.description() << std::endl;
+    
+    // Debug: print initial parameter count
+    std::vector<Value> initial_params = model.parameters();
+    std::cout << "Total parameters: " << initial_params.size() << std::endl;
+    
+
+    // Input
+    Value x1(tape.create_leaf(1.0f), &tape);
+    Value x2(tape.create_leaf(2.0f), &tape);
+    std::vector<Value> input = { x1, x2 };
+
+    // Target
+    Value target(tape.create_leaf(3.5f), &tape);
+
+    // Loop
+    for (size_t i = 0; i < 10; i++) {
+        std::cout << "\n=== Iteration " << i << " ===" << std::endl;
+        
+        // Forward
+        std::vector<Value> output = model(input);
+
+        // Loss (L2)
+        Value diff = output[0] - target;
+        Value loss = diff * diff;
+
+        std::cout << "Output: " << output[0].get_data() << std::endl;
+        std::cout << "Loss: " << loss.get_data() << std::endl;
+
+        // Backprop
+        tape.zero_grad();
+        tape.backward(loss.get_node());
+
+        // Update
+        optimizer.step();
+    }
+    
+}
+
 int main() {
     test_values();
     test_linear();
     test_MLP();
+    test_SGD();
     return 0;
 }
 

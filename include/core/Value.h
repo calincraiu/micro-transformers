@@ -15,6 +15,7 @@ public:
 	float get_data() const;
 	float get_grad() const;
 	Node* get_node() const;
+	void set_data(float data);
 
 	// Operators
 	Value operator-() const;
@@ -28,7 +29,9 @@ public:
 	Value pow(const float a) const;
 	Value log() const;
 	Value exp() const;
+
 	Value relu() const;
+	Value tanh() const;
 
 private:
 	Node* m_node;
